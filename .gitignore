@@ -1,0 +1,5 @@
+node_modules/
+*.tgz
+*.log
+.hexo-i18n/
+.DS_Store
