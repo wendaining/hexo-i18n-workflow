@@ -5,6 +5,7 @@ module.exports = {
   ...require('./lib/config'),
   ...require('./lib/repository'),
   ...require('./lib/content'),
+  ...require('./lib/content-routes'),
   ...require('./lib/markdown'),
   ...require('./lib/records'),
   ...require('./lib/pages'),
