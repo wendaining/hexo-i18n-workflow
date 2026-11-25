@@ -1,0 +1,56 @@
+.i18n-language-toggle {
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.i18n-language-toggle:focus-visible,
+.i18n-language-options a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.i18n-language-options[hidden],
+#navbar .i18n-language-menu .i18n-language-options[hidden] {
+  display: none;
+}
+
+.i18n-language-options a[aria-current="page"] {
+  font-weight: 700;
+}
+
+.i18n-language-options,
+#navbar .i18n-language-options {
+  color: var(--text-color, #333);
+  background-color: var(--board-bg-color, #fff);
+}
+
+.i18n-language-options a,
+#navbar .i18n-language-options a {
+  color: inherit;
+}
+
+.i18n-language-options a:hover,
+.i18n-language-options a:focus,
+#navbar .i18n-language-options a:hover,
+#navbar .i18n-language-options a:focus {
+  color: inherit;
+  background-color: var(--button-hover-bg-color, rgba(128, 128, 128, 0.15));
+}
+
+#navbar .i18n-language-menu > .dropdown-toggle:active {
+  pointer-events: auto;
+}
+
+@media (max-width: 991.98px) {
+  .i18n-language-menu .i18n-language-toggle {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .i18n-language-options {
+    text-align: center;
+  }
+}

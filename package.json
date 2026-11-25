@@ -1,0 +1,47 @@
+{
+  "name": "hexo-i18n-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configurable multilingual builds and confirmed translation baselines for Hexo",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./api": "./api.js",
+    "./cli": "./bin/cli.js"
+  },
+  "bin": {
+    "hexo-i18n": "bin/cli.js"
+  },
+  "files": [
+    "index.js",
+    "api.js",
+    "bin",
+    "lib",
+    "adapters",
+    "assets",
+    "README.md",
+    "MIGRATION.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "hexo": "^7.3.0"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "hexo-front-matter": "^4.2.1",
+    "js-yaml": "4.1.0",
+    "katex": "^0.16.22",
+    "markdown-it": "^14.1.0",
+    "markdown-it-texmath": "^1.0.0",
+    "parse-srcset": "1.0.2",
+    "postcss": "^8.5.6",
+    "postcss-value-parser": "^4.2.0",
+    "@traptitech/markdown-it-katex": "^3.6.0",
+    "gray-matter": "^4.0.3"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}
