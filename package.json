@@ -1,7 +1,16 @@
 {
   "name": "hexo-i18n-workflow",
   "version": "0.1.0",
-  "private": true,
+  "license": "GPL-2.0-only",
+  "author": "wendaining",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wendaining/hexo-i18n-workflow.git"
+  },
+  "homepage": "https://github.com/wendaining/hexo-i18n-workflow#readme",
+  "bugs": {
+    "url": "https://github.com/wendaining/hexo-i18n-workflow/issues"
+  },
   "description": "Configurable multilingual builds and confirmed translation baselines for Hexo",
   "main": "index.js",
   "exports": {
@@ -20,6 +29,8 @@
     "adapters",
     "assets",
     "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
     "MIGRATION.md"
   ],
   "engines": {

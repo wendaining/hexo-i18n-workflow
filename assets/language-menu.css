@@ -5,6 +5,13 @@
   cursor: pointer;
 }
 
+.i18n-language-icon {
+  width: 1em;
+  height: 1em;
+  margin-inline-end: 0.35em;
+  vertical-align: -0.125em;
+}
+
 .i18n-language-toggle:focus-visible,
 .i18n-language-options a:focus-visible {
   outline: 2px solid currentColor;
