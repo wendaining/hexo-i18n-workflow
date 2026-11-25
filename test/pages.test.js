@@ -55,7 +55,11 @@ test.before(async () => {
     hexo: '^7.3.0', 'hexo-i18n-workflow': 'file:plugin',
     'hexo-renderer-ejs': '^2.0.0', 'hexo-renderer-markdown-it': '^7.1.1', 'hexo-generator-index': '^4.0.0'
   } }));
-  fs.symlinkSync(path.resolve(__dirname, '..', '..', '..', 'node_modules'), path.join(root, 'node_modules'), 'dir');
+  fs.mkdirSync(path.join(root, 'node_modules'));
+  for (const dependency of ['hexo', 'hexo-renderer-ejs', 'hexo-renderer-markdown-it', 'hexo-generator-index']) {
+    fs.symlinkSync(path.dirname(require.resolve(`${dependency}/package.json`)), path.join(root, 'node_modules', dependency), 'dir');
+  }
+  fs.symlinkSync(path.resolve(__dirname, '..'), path.join(root, 'node_modules/hexo-i18n-workflow'), 'dir');
   const layout = '<!doctype html><html><head><title><%= config.title %></title></head><body><nav id="navbar"><div id="navbarSupportedContent"><ul class="navbar-nav"><li class="nav-item"><a href="/">Home</a></li><li id="search-btn">Search</li><li id="color-toggle-btn">Color</li></ul></div></nav><article class="markdown-body"><%- page.content || "" %></article></body></html>';
   for (const view of ['post', 'page', 'index']) write(root, `themes/test-theme/layout/${view}.ejs`, layout);
   write(root, 'themes/test-theme/layout/page.ejs', '<!doctype html><html><head><title><%= config.title %></title></head><body><nav><ul><%- i18n_language_menu(page) %></ul></nav><main><%- page.content %></main></body></html>');

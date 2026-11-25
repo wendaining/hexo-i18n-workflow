@@ -8,11 +8,12 @@ const test = require('node:test');
 const { spawnSync } = require('node:child_process');
 const yaml = require('js-yaml');
 const { load } = require('cheerio');
+const postcss = require('postcss');
+const valueParser = require('postcss-value-parser');
 const { readConfig } = require('../lib/config');
 const { build } = require('../lib/build');
 const { clean } = require('../lib/clean');
 
-const dependencies = path.resolve(__dirname, '../../..', 'node_modules');
 const sharedImage = fs.readFileSync(path.join(__dirname, 'fixtures/shared.png'));
 const alternateImage = fs.readFileSync(path.join(__dirname, 'fixtures/alternate.png'));
 
@@ -29,11 +30,18 @@ function article(title, body, extra = {}) {
 function station(t) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'hexo multilingual build ')));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  fs.symlinkSync(dependencies, path.join(root, 'node_modules'), 'dir');
-  write(root, 'package.json', JSON.stringify({ name: 'real-hexo-test-station', private: true, hexo: { version: '7.3.0' }, dependencies: {
+  const dependencies = {
     hexo: '^7.3.0', 'hexo-i18n-workflow': 'file:plugins/hexo-i18n-workflow',
     'hexo-renderer-ejs': '^2.0.0', 'hexo-renderer-markdown-it': '^7.1.1', 'hexo-generator-index': '^4.0.0', cheerio: '^1.2.0'
-  } }));
+  };
+  write(root, 'package.json', JSON.stringify({ name: 'real-hexo-test-station', private: true,
+    hexo: { version: '7.3.0' }, dependencies }));
+  fs.mkdirSync(path.join(root, 'node_modules'));
+  for (const name of Object.keys(dependencies)) {
+    const directory = name === 'hexo-i18n-workflow'
+      ? path.resolve(__dirname, '..') : path.dirname(require.resolve(`${name}/package.json`));
+    fs.symlinkSync(directory, path.join(root, 'node_modules', name), 'dir');
+  }
   const settings = {
     title: 'Source station', url: 'https://example.test/', theme: 'fixture', permalink: 'posts/:title/',
     source_dir: 'content original', public_dir: 'published output', timezone: 'UTC',
@@ -148,6 +156,41 @@ test('uses existing shared source resources for translated pages, scripts and ba
   assert.ok(fs.readFileSync(path.join(result.outputDir, 'img/bg/original.png')).equals(sharedImage));
   assert.equal(fs.existsSync(path.join(result.outputDir, 'english/img/bg/original.png')), false);
   assert.match(fs.readFileSync(path.join(result.outputDir, 'english/css/target-only.css'), 'utf8'), /url\('\/img\/bg\/original.png'\)/);
+});
+
+test('shares identical stylesheets only when their relative resources and imports match', async t => {
+  const fixture = station(t);
+  fixture.settings.multilingual.shared_assets = ['img', 'css'];
+  write(fixture.root, '_config.yml', yaml.dump(fixture.settings));
+  for (const directory of ['content original', 'content english', 'content german']) {
+    write(fixture.root, `${directory}/css/dependent.css`, ".hero { background-image: url('../img/different.png'); }\n.second { background-image: image-set('../img/different.png' 1x); }\n");
+    write(fixture.root, `${directory}/css/imported.css`, "@import './dependent.css';\n");
+  }
+  write(fixture.root, 'themes/fixture/layout/layout.ejs', '<!doctype html><html><head><title><%= config.title %></title><%- css("css/dependent.css") %><%- css("css/imported.css") %><%- css("css/pictures.css") %></head><body><nav id="navbarSupportedContent"><ul class="navbar-nav"></ul></nav><article class="markdown-body"><%- body %></article></body></html>');
+  const result = await build(fixture.config());
+  const english = load(fs.readFileSync(path.join(result.outputDir, 'english/essays/translated/index.html'), 'utf8'));
+  assert.equal(english('link[href="/english/css/dependent.css"]').length, 1);
+  assert.equal(english('link[href="/english/css/imported.css"]').length, 1);
+  assert.equal(english('link[href="/css/pictures.css"]').length, 1);
+  assert.equal(fs.existsSync(path.join(result.outputDir, 'english/css/pictures.css')), false);
+  assert.equal(fs.existsSync(path.join(result.outputDir, 'english/css/dependent.css')), true);
+  assert.equal(fs.existsSync(path.join(result.outputDir, 'english/css/imported.css')), true);
+  const german = load(fs.readFileSync(path.join(result.outputDir, 'third/artikel/beispiel/index.html'), 'utf8'));
+  assert.equal(german('link[href="/english/css/dependent.css"]').length, 1);
+  assert.equal(german('link[href="/english/css/imported.css"]').length, 1);
+  assert.equal(fs.existsSync(path.join(result.outputDir, 'third/css/dependent.css')), false);
+  assert.ok(fs.readFileSync(path.join(result.outputDir, 'img/different.png')).equals(sharedImage));
+  assert.ok(fs.readFileSync(path.join(result.outputDir, 'english/img/different.png')).equals(alternateImage));
+  const stylesheet = postcss.parse(fs.readFileSync(path.join(result.outputDir, 'english/css/dependent.css'), 'utf8'));
+  let reference;
+  stylesheet.walkDecls('background-image', declaration => {
+    valueParser(declaration.value).walk(node => {
+      if (node.type === 'function' && node.value === 'url') reference = node.nodes[0].value;
+    });
+  });
+  const resource = new URL(reference, 'https://example.test/english/css/dependent.css');
+  assert.equal(resource.pathname, '/english/img/different.png');
+  assert.ok(fs.readFileSync(path.join(result.outputDir, resource.pathname)).equals(alternateImage));
 });
 
 test('rejects duplicate true permalinks before publishing and preserves existing output', async t => {
@@ -304,7 +347,7 @@ test('ordinary Hexo generate rejects unconfirmed content and route conflicts', t
 
 test('installs a packed plugin outside the repository and builds three real Hexo languages', { timeout: 180000 }, async t => {
   const fixture = station(t);
-  fs.unlinkSync(path.join(fixture.root, 'node_modules'));
+  fs.rmSync(path.join(fixture.root, 'node_modules'), { recursive: true });
   const packed = spawnSync('npm', ['pack', path.resolve(__dirname, '..'), '--pack-destination', fixture.root, '--json'], {
     cwd: fixture.root, encoding: 'utf8', timeout: 60000
   });

@@ -130,7 +130,7 @@ The API also exposes `confirm(repo, config, options)`, `migrate(repo, config, op
 
 Hexo helpers are `i18n_versions(page)`, `i18n_language_menu(page)`, `i18n_comments(page)`, `i18n_notice(page, format)` and `i18n_sitemap_url()`. Other themes can render the menu through their own template. The Fluid adapter inserts one menu item into the rendered navigation and retains the original navigation template. Its assets support pointer and keyboard operation. Final page enrichment uses actual rendered heading IDs, canonical URLs and existing versions for language links and `hreflang`. `x-default` points to the original version.
 
-Shared resources are limited to `shared_assets`. Identical files are shared after comparing their hashes. Different contents at the same relative asset path retain their language copies. HTML and XML references are updated to the retained asset. Sitemaps are merged as parsed XML.
+Shared resources are limited to `shared_assets`. Identical files are shared after comparing their hashes. CSS sharing also compares the actual contents of referenced resources and imported stylesheets. Different contents at the same relative asset path retain their language copies. A resource present only in the original site can serve a language page through its original URL. HTML, XML and CSS references are updated to the retained asset. Sitemaps are merged as parsed XML.
 
 ## Site extensions
 
@@ -166,5 +166,7 @@ The package tests use real Hexo sites, files and Git repositories. They cover th
 npm test --prefix plugins/hexo-i18n-workflow
 npm pack ./plugins/hexo-i18n-workflow
 ```
+
+Development dependencies are declared in the package. A copied plugin directory can run `npm install` and `npm test` independently of the blog.
 
 To extract the package, move this directory into its own repository, preserve its tests and direct dependencies, decide its license and name, update package metadata and change the site's dependency to the selected package source.
