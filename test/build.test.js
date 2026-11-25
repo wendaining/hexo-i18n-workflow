@@ -127,6 +127,29 @@ test('builds three real Hexo sites with isolated paths, databases, real routes a
   assert.match(fs.readFileSync(path.join(output, 'english/css/unicode.css'), 'utf8'), /url\('\/img\/%E5%9B%BE%E5%83%8F%20space.png'\)/);
 });
 
+test('uses existing shared source resources for translated pages, scripts and background styles', async t => {
+  const fixture = station(t);
+  fixture.settings.multilingual.shared_assets = ['img', 'css', 'js'];
+  write(fixture.root, '_config.yml', yaml.dump(fixture.settings));
+  write(fixture.root, 'content original/img/bg/original.png', sharedImage);
+  write(fixture.root, 'content original/css/custom.css', ".logo { background-image: url('../img/bg/original.png'); }\n");
+  write(fixture.root, 'content original/js/source-only.js', "document.documentElement.dataset.sharedResource = 'ready';\n");
+  write(fixture.root, 'content english/css/target-only.css', ".translated { background-image: url('../img/bg/original.png'); }\n");
+  write(fixture.root, 'themes/fixture/layout/layout.ejs', '<!doctype html><html><head><title><%= config.title %></title><%- css("css/custom.css") %><%- js("js/source-only.js") %><style>.banner { background-image: url("<%= url_for("img/bg/original.png") %>"); }</style></head><body><nav id="navbarSupportedContent"><ul class="navbar-nav"></ul></nav><div id="hero" style="background-image: url(\'<%= url_for("img/bg/original.png") %>\'); color: red"></div><img id="source-image" src="<%= url_for("img/bg/original.png?v=1#cover") %>"><article class="markdown-body"><%- body %></article></body></html>');
+  const result = await build(fixture.config());
+  const html = load(fs.readFileSync(path.join(result.outputDir, 'english/essays/translated/index.html'), 'utf8'));
+  assert.equal(html('link[href="/css/custom.css"]').length, 1);
+  assert.equal(html('script[src="/js/source-only.js"]').length, 1);
+  assert.equal(html('#source-image').attr('src'), '/img/bg/original.png?v=1#cover');
+  assert.match(html('#hero').attr('style'), /url\('\/img\/bg\/original.png'\)/);
+  assert.match(html('style').text(), /url\("\/img\/bg\/original.png"\)/);
+  assert.equal(html('article img').last().attr('src'), '/english/img/different.png');
+  assert.ok(fs.readFileSync(path.join(result.outputDir, 'english/img/different.png')).equals(alternateImage));
+  assert.ok(fs.readFileSync(path.join(result.outputDir, 'img/bg/original.png')).equals(sharedImage));
+  assert.equal(fs.existsSync(path.join(result.outputDir, 'english/img/bg/original.png')), false);
+  assert.match(fs.readFileSync(path.join(result.outputDir, 'english/css/target-only.css'), 'utf8'), /url\('\/img\/bg\/original.png'\)/);
+});
+
 test('rejects duplicate true permalinks before publishing and preserves existing output', async t => {
   const fixture = station(t);
   write(fixture.root, 'published output/keep.txt', 'Current complete output');
