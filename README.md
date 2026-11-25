@@ -122,6 +122,8 @@ const records = api.loadRecords(repo, config);
 
 The API also exposes `confirm(repo, config, options)`, `migrate(repo, config, options)`, `build(config, options)`, `clean(config)`, `resolvePair(repo, config, input, options)` and `listRequiredPairs(repo, config, options)`. Content entries contain `id`, `source`, `sourceLanguage`, `kind` and `versions`. The `markdown` namespace provides parser and section utilities.
 
+`createContentRoutes(repo, config, content, {manifests})` resolves content links with the installed Hexo core's permalink rules without initializing a theme. It reads language overrides from the same repository revision and uses supplied real manifests in preference to core routes. Theme filters that change permalink behavior should supply their build manifests when checking links.
+
 `createPageIndex(config, manifests)` uses real build manifests. `languageVersions(index, query)` returns existing versions. A query identifies a document by `{contentId, language}` or `{route, language}`. The `language` query field selects the site language. Each result includes the actual content language, URL, source flag and current flag.
 
 `commentIdentity(index, query, options)` returns `contentId`, `currentLanguage`, `sourceUrl`, `currentUrl` and `discussionId`. Shared mode uses the content ID. Independent mode appends the actual language. A custom `discussionId(identity)` function can be supplied in API options or a site extension.
